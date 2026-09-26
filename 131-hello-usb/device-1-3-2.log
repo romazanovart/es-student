@@ -1,0 +1,18 @@
+задание: 1.3.2
+проект: 131-hello-usb
+устройство: 2e8a:000a
+серийный номер: E6639C758F144D34
+порт: /dev/ttyACM0
+начало: 2026-09-26T20:21:28
+   0.994 <-- Hello, world!
+   1.994 <-- Hello, world!
+   2.994 <-- Hello, world!
+   3.994 <-- Hello, world!
+   4.994 <-- Hello, world!
+   5.994 <-- Hello, world!
+   6.994 <-- Hello, world!
+   7.994 <-- Hello, world!
+   8.994 <-- Hello, world!
+   9.994 <-- Hello, world!
+  10.994 <-- Hello, world!
+итог: принято строк 11 за 10.0 с
