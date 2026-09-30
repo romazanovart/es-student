@@ -2,8 +2,16 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "hardware/regs/addressmap.h"
 #include "pico/stdlib.h"
+#include "command.h"
+#include "device.h"
+
+int main(void);
+
+uint32_t data_variable = 100;
+uint32_t bss_variable;
 
 extern char __flash_binary_start;
 extern char __flash_binary_end;
@@ -81,4 +89,51 @@ void mem_info(void)
            (unsigned)data_size, (unsigned)bss_size);
     printf("  ram free    %8u for heap and %u for stack\n",
            (unsigned)heap_size, (unsigned)stack_size);
+}
+
+void fw_info(void)
+{
+    data_variable++;
+    bss_variable++;
+
+    uint16_t *main_code = (uint16_t *)((uintptr_t)main & ~1u);
+    uint16_t *fw_info_code = (uint16_t *)((uintptr_t)fw_info & ~1u);
+    uint32_t stack_variable = 1946;
+    uint32_t *heap_variable = malloc(sizeof(uint32_t));
+
+    if (heap_variable != NULL)
+    {
+        *heap_variable = 1951;
+    }
+
+    printf("object          address     value\n");
+    printf("%-15s 0x%08x  0x%04x\n", "main",
+           (unsigned)(uintptr_t)main, (unsigned)*main_code);
+    printf("%-15s 0x%08x  0x%04x\n", "fw_info",
+           (unsigned)(uintptr_t)fw_info, (unsigned)*fw_info_code);
+    printf("%-15s 0x%08x\n", "commands", (unsigned)(uintptr_t)commands);
+
+    for (uint i = 0; i < command_count; i++)
+    {
+        printf("- %-13s 0x%08x\n", commands[i].name,
+               (unsigned)(uintptr_t)commands[i].handler);
+    }
+
+    printf("%-15s 0x%08x  %s\n", "DEVICE_PROJECT",
+           (unsigned)(uintptr_t)DEVICE_PROJECT, DEVICE_PROJECT);
+    printf("%-15s 0x%08x  %s\n", "DEVICE_BOARD",
+           (unsigned)(uintptr_t)DEVICE_BOARD, DEVICE_BOARD);
+    printf("%-15s 0x%08x  %u\n", "data_variable",
+           (unsigned)(uintptr_t)&data_variable, (unsigned)data_variable);
+    printf("%-15s 0x%08x  %u\n", "bss_variable",
+           (unsigned)(uintptr_t)&bss_variable, (unsigned)bss_variable);
+    printf("%-15s 0x%08x  %u\n", "stack_variable",
+           (unsigned)(uintptr_t)&stack_variable, (unsigned)stack_variable);
+
+    if (heap_variable != NULL)
+    {
+        printf("%-15s 0x%08x  %u\n", "heap_variable",
+               (unsigned)(uintptr_t)heap_variable, (unsigned)*heap_variable);
+        free(heap_variable);
+    }
 }
