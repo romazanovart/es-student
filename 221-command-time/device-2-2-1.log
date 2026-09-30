@@ -1,0 +1,26 @@
+задание: 2.2.1
+проект: 221-command-time
+устройство: 2e8a:000a
+серийный номер: E6639C758F144D34
+порт: /dev/ttyACM0
+начало: 2026-09-30T19:41:48
+   0.000 --> clk_info
+   0.178 <-- clk_info
+   0.179 <-- dbg read_line:158 got clk_info
+   0.179 <-- signal     set_khz measured_khz
+   0.180 <-- clk_ref      12000        12001
+   0.181 <-- clk_sys     125000       125000
+   0.182 <-- clk_peri    125000       125000
+   0.183 <-- clk_usb      48000        48000
+   0.185 <-- clk_adc      48000        48000
+   0.185 <-- rosc             -         5736
+   2.189 --> info
+   2.282 <-- info
+   2.283 <-- dbg read_line:158 got info
+   2.283 <-- project: 221-command-time
+   2.283 <-- repo: https://github.com/romazanovart/es-student
+   2.283 <-- board: pico
+   2.283 <-- serial: E6639C758F144D34
+   2.284 <-- chip: manufacturer 0x927, part 0x0002, revision 2
+   2.284 <-- pico-sdk: 2.3.0
+итог: отправлено команд 2, принято строк 17
