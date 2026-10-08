@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "button-task.h"
 #include "device.h"
 #include "firmware.h"
 #include "led-task.h"
@@ -166,6 +167,14 @@ static void command_led_period(const command_t *command)
     print_led();
 }
 
+static void command_button(const command_t *command)
+{
+    (void)command;
+    printf("button: %s, presses %u\n",
+           button_task_is_pressed() ? "pressed" : "released",
+           (unsigned)button_task_get_press_count());
+}
+
 static const api_command_t commands[] = {
     { "info", "device passport", command_info },
     { "uptime", "time since reset", command_uptime },
@@ -176,6 +185,7 @@ static const api_command_t commands[] = {
     { "led_disable", "turn LED off", command_led_disable },
     { "led_blink", "blink LED", command_led_blink },
     { "led_period", "set blink period: led_period <period_ms>", command_led_period },
+    { "button", "button state and press count", command_button },
 };
 
 static void command_help(void)
