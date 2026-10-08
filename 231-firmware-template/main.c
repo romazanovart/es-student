@@ -1,10 +1,10 @@
-#include "api.h"
-#include "button-task.h"
+#include "api/api.h"
+#include "button-task/button-task.h"
 #include "firmware.h"
-#include "led-task.h"
+#include "led-task/led-task.h"
 #include "logging/log.h"
-#include "pico/stdlib.h"
-#include "pi-task.h"
+#include "pi-task/pi-task.h"
+#include "platform/platform.h"
 #include "profiling/profiling.h"
 #include "stdio-text-protocol/stdio-text-protocol.h"
 
@@ -18,9 +18,9 @@ typedef enum {
 
 int main(void)
 {
-    stdio_init_all();
+    platform_init();
     led_task_init();
-    button_task_init();
+    button_task_init(led_task_next_state);
     stdio_text_protocol_init();
     profiling_stopwatch_init(STOPWATCH_LOOP, "loop");
     profiling_stopwatch_init(STOPWATCH_COMMAND, "command");
@@ -29,7 +29,7 @@ int main(void)
     profiling_stopwatch_init(STOPWATCH_PI, "pi");
     LOG_INF("%s %s\n", FIRMWARE_NAME, FIRMWARE_VERSION);
 
-    while (true)
+    while (1)
     {
         profiling_start(STOPWATCH_LOOP);
 

@@ -1,9 +1,8 @@
-#include "led-task.h"
+#include "led-task/led-task.h"
 
-#include "hardware/gpio.h"
+#include "platform/platform.h"
 #include "systime/systime.h"
 
-#define LED_PIN 25
 #define DEFAULT_PERIOD_MS 1000
 
 static led_state_t led_state;
@@ -14,13 +13,11 @@ static uint64_t last_toggle_us;
 static void led_set(bool on)
 {
     led_on = on;
-    gpio_put(LED_PIN, on);
+    platform_led_set(on);
 }
 
 void led_task_init(void)
 {
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
     led_period_ms = DEFAULT_PERIOD_MS;
     led_task_set_state(LED_STATE_BLINK);
 }

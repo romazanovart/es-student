@@ -1,5 +1,4 @@
-#ifndef PI_TASK_H
-#define PI_TASK_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,5 +19,3 @@ typedef struct {
 bool pi_task_start(uint32_t terms);
 void pi_task_handle(void);
 void pi_task_get_result(pi_task_result_t *result);
-
-#endif

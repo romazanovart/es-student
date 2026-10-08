@@ -1,5 +1,4 @@
-#ifndef PROFILING_H
-#define PROFILING_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -28,5 +27,3 @@ void profiling_stop(uint32_t id);
 #endif
 bool profiling_get(uint32_t id, profiling_result_t *result);
 void profiling_reset(void);
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef LED_TASK_H
-#define LED_TASK_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,5 +16,3 @@ void led_task_next_state(void);
 led_state_t led_task_get_state(void);
 bool led_task_set_period_ms(uint32_t period_ms);
 uint32_t led_task_get_period_ms(void);
-
-#endif
