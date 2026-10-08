@@ -1,5 +1,7 @@
 # es-student
 
+[![2.3.1 Протокол и API](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-1.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-1.yml)
+
 [![2.2.5 Частота ядра](https://github.com/romazanovart/es-student/actions/workflows/check-2-2-5.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-2-5.yml)
 
 [![2.2.4 Профилирование](https://github.com/romazanovart/es-student/actions/workflows/check-2-2-4.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-2-4.yml)
