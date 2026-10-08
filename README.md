@@ -1,5 +1,7 @@
 # es-student
 
+[![2.3.6 Библиотеки](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-6.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-6.yml)
+
 [![2.3.5 Данные вместо печати](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-5.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-5.yml)
 
 [![2.3.4 Расчёт по шагам](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-4.yml/badge.svg)](https://github.com/romazanovart/es-student/actions/workflows/check-2-3-4.yml)

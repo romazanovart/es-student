@@ -2,11 +2,11 @@
 #include "button-task.h"
 #include "firmware.h"
 #include "led-task.h"
-#include "log.h"
+#include "logging/log.h"
 #include "pico/stdlib.h"
 #include "pi-task.h"
-#include "profiling.h"
-#include "stdio-text-protocol.h"
+#include "profiling/profiling.h"
+#include "stdio-text-protocol/stdio-text-protocol.h"
 
 typedef enum {
     STOPWATCH_LOOP,
