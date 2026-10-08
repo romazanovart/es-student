@@ -7,6 +7,7 @@
 #include <string.h>
 #include "device.h"
 #include "firmware.h"
+#include "led-task.h"
 #include "pico/stdlib.h"
 #include "profiling.h"
 
@@ -22,6 +23,28 @@ typedef struct
 } api_command_t;
 
 static volatile double pi_result;
+
+static const char *led_state_name(led_state_t state)
+{
+    switch (state)
+    {
+        case LED_STATE_OFF:
+            return "off";
+        case LED_STATE_ON:
+            return "on";
+        case LED_STATE_BLINK:
+            return "blink";
+        default:
+            return "unknown";
+    }
+}
+
+static void print_led(void)
+{
+    printf("led: %s, period %u ms\n",
+           led_state_name(led_task_get_state()),
+           (unsigned)led_task_get_period_ms());
+}
 
 static bool parse_u32(const char *text, uint32_t *result)
 {
@@ -106,12 +129,53 @@ static void command_main_time_reset(const command_t *command)
     printf("max reset\n");
 }
 
+static void command_led_enable(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_ON);
+    print_led();
+}
+
+static void command_led_disable(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_OFF);
+    print_led();
+}
+
+static void command_led_blink(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_BLINK);
+    print_led();
+}
+
+static void command_led_period(const command_t *command)
+{
+    uint32_t period_ms;
+    if (command->argc != 1 || !parse_u32(command->argv[0], &period_ms))
+    {
+        printf("error: usage led_period <period_ms>\n");
+        return;
+    }
+    if (!led_task_set_period_ms(period_ms))
+    {
+        printf("error: period_ms must be greater than 0\n");
+        return;
+    }
+    print_led();
+}
+
 static const api_command_t commands[] = {
     { "info", "device passport", command_info },
     { "uptime", "time since reset", command_uptime },
     { "calc_pi", "calculate pi: calc_pi [terms]", command_calc_pi },
     { "main_time_exec", "superloop iteration: average and maximum", command_main_time_exec },
     { "main_time_reset", "reset maximum iteration", command_main_time_reset },
+    { "led_enable", "turn LED on", command_led_enable },
+    { "led_disable", "turn LED off", command_led_disable },
+    { "led_blink", "blink LED", command_led_blink },
+    { "led_period", "set blink period: led_period <period_ms>", command_led_period },
 };
 
 static void command_help(void)
