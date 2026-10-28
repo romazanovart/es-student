@@ -205,7 +205,39 @@ static void command_get_temp(const command_t *command)
     printf("temp: %.1f C\n", platform_temp_read());
 }
 
+void api_print_telemetry(const telemetry_record_t *record)
+{
+    printf("tm: %llu %.3f %.1f\n", (unsigned long long)record->time_us,
+           record->voltage_v, record->temp_c);
+}
+
+static void command_tm_start(const command_t *command)
+{
+    uint32_t period_ms = 100;
+    if (command->argc > 1 ||
+        (command->argc == 1 && !parse_u32(command->argv[0], &period_ms)))
+    {
+        printf("error: usage tm_start [<period_ms>]\n");
+        return;
+    }
+    if (!telemetry_task_start(period_ms))
+    {
+        printf("error: period_ms must be at least 10\n");
+        return;
+    }
+    printf("telemetry: started, period %u ms\n", (unsigned)period_ms);
+}
+
+static void command_tm_stop(const command_t *command)
+{
+    (void)command;
+    telemetry_task_stop();
+    printf("telemetry: stopped\n");
+}
+
 const api_command_t api_commands[] = {
+    { "tm_start", "start telemetry: tm_start [<period_ms>]", command_tm_start },
+    { "tm_stop", "stop telemetry", command_tm_stop },
     { "get_temp", "chip temperature, degrees Celsius", command_get_temp },
     { "get_voltage", "voltage on GP26, ADC input 0", command_get_voltage },
     { "info", "device passport", command_info },
