@@ -7,6 +7,7 @@
 #define LED_PIN 25
 #define BUTTON_PIN 15
 #define ADC_PIN 26
+#define CHARGE_PIN 22
 #define ADC_CHANNEL 0
 #define ADC_TEMP_CHANNEL 4
 #define ADC_VREF_V 3.3f
@@ -15,6 +16,9 @@
 void platform_init(void)
 {
     stdio_init_all();
+    gpio_init(CHARGE_PIN);
+    gpio_put(CHARGE_PIN, false);
+    gpio_set_dir(CHARGE_PIN, GPIO_OUT);
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_init(BUTTON_PIN);
@@ -46,4 +50,9 @@ void platform_led_set(bool on)
 bool platform_button_read(void)
 {
     return !gpio_get(BUTTON_PIN);
+}
+
+void platform_charge_set(bool on)
+{
+    gpio_put(CHARGE_PIN, on);
 }
