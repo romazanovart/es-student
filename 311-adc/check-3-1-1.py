@@ -1,6 +1,3 @@
-# Задание 3.1.1: спрашивает у платы справку, паспорт и трижды напряжение на входе АЦП,
-# записывает обмен в файл device-3-1-1.log.
-
 import time
 from datetime import datetime
 
@@ -14,7 +11,6 @@ TASK = "3.1.1"
 PROJECT = "311-adc"
 LOG_NAME = "device-3-1-1.log"
 BACKSPACE = "\x7f"
-# Кадр команды и сколько секунд слушать ответ.
 STEPS = [
     ("\r", 0.5),
     ("help\r", 1),

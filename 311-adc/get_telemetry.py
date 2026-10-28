@@ -1,10 +1,3 @@
-# Сбор телеметрии прибора 311-adc: запускает поток, принимает строки tm:,
-# сохраняет записи в telemetry.csv и строит график в telemetry.png.
-#
-#   python get_telemetry.py                      — 10 секунд с периодом 100 мс
-#   python get_telemetry.py --seconds 30 --period 50
-#   python get_telemetry.py --plot telemetry.csv — только график из готового файла
-
 import argparse
 import csv
 import time
@@ -13,7 +6,6 @@ import matplotlib
 import serial
 from serial.tools import list_ports
 
-# окно не нужно: график сразу сохраняется в файл
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -64,7 +56,6 @@ def collect(device, seconds, period_ms):
 
 
 def save_csv(records, name):
-    # время от первой записи в секундах: так график начинается с нуля
     start_us = records[0][0]
     with open(name, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -107,7 +98,6 @@ args = parser.parse_args()
 if args.plot:
     plot(args.plot, "telemetry.png")
 else:
-    # найти плату, принять поток, сохранить CSV и построить график
     board = find_board()
     if board is None:
         print("Плата не найдена. Проверьте кабель и запишите на плату прошивку прибора.")

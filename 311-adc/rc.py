@@ -1,10 +1,3 @@
-# Опыт с RC-цепью на приборе 311-adc. По номиналам деталей ведёт опыт, по 5τ на заряд
-# и разряд, сохраняет записи в rc.csv, график в rc.png, номиналы и найденную τ в rc.log
-# и сверяет τ с R·C. Приём потока устроен как в get_telemetry.py из п3.1.4.
-#
-#   python rc.py --r 10 --c 100   — опыт с RC-цепью, R в кОм, C в мкФ
-#   python rc.py --plot rc.csv    — разбор готовой записи, номиналы берутся из rc.log
-
 import argparse
 import csv
 import time
@@ -13,11 +6,9 @@ import matplotlib
 import serial
 from serial.tools import list_ports
 
-# окно не нужно: график сразу сохраняется в файл
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# настоящая τ отличается от R·C из-за допуска деталей: C ±20 %, R ±5 %
 TAU_LOW = 0.8 * 0.95
 TAU_HIGH = 1.2 * 1.05
 
@@ -55,7 +46,6 @@ def collect(device, seconds, period_ms, actions=()):
         received = ""
         try:
             while time.monotonic() < deadline:
-                # команды опыта — в свои моменты от начала приёма
                 while pending and time.monotonic() - started >= pending[0][0]:
                     port.write((pending.pop(0)[1] + "\r").encode("ascii"))
                 received += port.read(256).decode("ascii", "replace")
@@ -74,7 +64,6 @@ def collect(device, seconds, period_ms, actions=()):
 
 
 def save_csv(records, name):
-    # время от первой записи в секундах: так график начинается с нуля
     start_us = records[0][0]
     with open(name, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -95,9 +84,7 @@ def load_csv(name):
 
 def rc_plan(tau):
     """Период телеметрии, команды опыта и его длительность по ожидаемой τ."""
-    # около ста отсчётов на τ, но не чаще, чем умеет прибор
     period_ms = max(10, round(tau * 10))
-    # полсекунды покоя, 5τ заряда, 5τ разряда и полсекунды в запас
     actions = [(0.5, "charge_on"), (0.5 + 5 * tau, "charge_off")]
     return period_ms, actions, 1 + 10 * tau
 
@@ -115,12 +102,10 @@ def measure_tau(times, voltages):
     top = max(voltages)
     peak = voltages.index(top)
     result = {"top": top}
-    # заряд: от начала подъёма (2 % вершины) до 63 % вершины
     start = crossing(voltages, 0, 0.02 * top, True)
     end = crossing(voltages, start, 0.632 * top, True) if start is not None else None
     if end is not None and end <= peak:
         result["charge"] = (times[start], times[end], voltages[end])
-    # разряд: от начала спада (98 % вершины) до 37 % вершины
     start = crossing(voltages, peak, 0.98 * top, False)
     end = crossing(voltages, start, 0.368 * top, False) if start is not None else None
     if end is not None:
@@ -155,7 +140,6 @@ def analyze_rc(csv_name, r_kohm, c_uf):
         measured = end - start
         inside = low <= measured <= high
         passed = passed and inside
-        # от начала и конца заряда отсчитывается ожидаемый момент перехода уровня
         ax.axvline(start, color="tab:purple", linestyle="--", linewidth=1,
                    label="начало и конец заряда" if key == "charge" else None)
         ax.axvspan(start + low, start + high, color="tab:green", alpha=0.15,
@@ -204,7 +188,6 @@ args = parser.parse_args()
 if (args.r is None) != (args.c is None):
     parser.error("нужны оба номинала, --r и --c")
 if args.r is None:
-    # без номиналов можно только разобрать запись, номиналы — из прошлого опыта
     found = read_log("rc.log") if args.plot else None
     if found is None:
         parser.error("укажите номиналы деталей: --r <кОм> --c <мкФ>")
