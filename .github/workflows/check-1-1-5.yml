@@ -6,6 +6,43 @@ on:
 
 jobs:
   check:
-    uses: ant-lab-ru/es-test/.github/workflows/check-1-1-5.yml@master
-    secrets:
-      ES_ACCOUNT_SECRET: ${{ secrets.ES_ACCOUNT_SECRET }}
+    name: Настройка автоматической проверки
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Репозиторий обучающегося
+        uses: actions/checkout@v7
+        with:
+          path: student
+          fetch-depth: 0
+
+      - name: Проверки курса
+        uses: actions/checkout@v7
+        with:
+          repository: ant-lab-ru/es-test
+          path: es-test
+
+      - name: Проверка
+        run: es-test/checks/check-1-1-5.sh student
+        env:
+          CHECKS_JSON: ${{ runner.temp }}/report.json
+
+      - name: Отправка результата на платформу
+        if: always()
+        env:
+          ES_ACCOUNT_SECRET: ${{ secrets.ES_ACCOUNT_SECRET }}
+          REPORT: ${{ runner.temp }}/report.json
+        run: |
+          if [ -z "$ES_ACCOUNT_SECRET" ] || [ ! -f "$REPORT" ]; then
+            echo "Отправка пропущена: нет секрета или отчёта."
+            exit 0
+          fi
+          code=$(curl -sS --connect-timeout 15 --max-time 40 \
+            --retry 3 --retry-connrefused --retry-max-time 150 \
+            -o response.txt -w '%{http_code}' \
+            -H "Authorization: Bearer $ES_ACCOUNT_SECRET" \
+            -H 'Content-Type: application/json' \
+            --data-binary @"$REPORT" https://es.ant-lab.ru/api/results/)
+          echo "Ответ платформы: $code"
+          [ "$code" = "200" ]
