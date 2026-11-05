@@ -277,6 +277,11 @@ float platform_temp_read(void)
     return 27.0f - (voltage - 0.706f) / 0.001721f;
 }
 
+float platform_adc_volts(float code)
+{
+    return code * ADC_VREF_V / ADC_LEVELS;
+}
+
 float platform_voltage_read(void)
 {
     adc_select_input(ADC_CHANNEL);

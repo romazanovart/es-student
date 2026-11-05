@@ -2,6 +2,7 @@
 #include "block-task/block-task.h"
 
 #include <errno.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -365,6 +366,12 @@ static void print_block(const uint16_t *samples, uint32_t count, uint32_t time_u
            (double)sum / count);
 }
 
+static void start_block(uint32_t count, block_task_callback_t callback)
+{
+    if (telemetry_task_get_state() == TELEMETRY_STATE_RUN || !block_task_start(count, callback))
+        puts("error: adc busy");
+}
+
 static void command_dma_cap(const command_t *command)
 {
     uint32_t count;
@@ -378,8 +385,7 @@ static void command_dma_cap(const command_t *command)
         puts("error: N must be 1..8192");
         return;
     }
-    if (telemetry_task_get_state() == TELEMETRY_STATE_RUN || !block_task_start(count, print_block))
-        puts("error: adc busy");
+    start_block(count, print_block);
 }
 
 void api_send_frame(const stream_header_t *header, const uint8_t *data, uint32_t bytes)
@@ -470,7 +476,64 @@ static void command_reset_reason(const command_t *command)
     printf("reset: %s, restarts %u\n", reset ? "watchdog" : "other", (unsigned)restarts);
 }
 
+static void print_mic_bias(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    uint32_t sum = 0;
+    for (uint32_t i = 0; i < count; i++)
+        sum += samples[i];
+    printf("mic: bias %.3f V\n", platform_adc_volts((float)sum / count));
+}
+
+static void print_mic_level(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    uint32_t sum = 0;
+    for (uint32_t i = 0; i < count; i++)
+        sum += samples[i];
+    int32_t center = sum / count;
+    uint64_t squares = 0;
+    uint32_t peak = 0;
+    for (uint32_t i = 0; i < count; i++)
+    {
+        int32_t offset = (int32_t)samples[i] - center;
+        uint32_t magnitude = offset < 0 ? -offset : offset;
+        squares += magnitude * magnitude;
+        if (magnitude > peak)
+            peak = magnitude;
+    }
+    float rms = sqrtf((float)squares / count);
+    unsigned window_ms = (count * 1000 + PLATFORM_SAMPLE_RATE_HZ / 2) / PLATFORM_SAMPLE_RATE_HZ;
+    printf("mic: level %.1f mV rms, peak %.1f mV, %u ms\n",
+           platform_adc_volts(rms) * 1000, platform_adc_volts(peak) * 1000, window_ms);
+}
+
+static void command_mic_bias(const command_t *command)
+{
+    (void)command;
+    start_block(PLATFORM_SAMPLE_RATE_HZ / 10, print_mic_bias);
+}
+
+static void command_mic_level(const command_t *command)
+{
+    uint32_t ms = 100;
+    if (command->argc > 1 || (command->argc == 1 && !parse_u32(command->argv[0], &ms)))
+    {
+        puts("error: usage mic_level [<ms>]");
+        return;
+    }
+    uint64_t count = (uint64_t)ms * PLATFORM_SAMPLE_RATE_HZ / 1000;
+    if (count == 0 || count > PLATFORM_BLOCK_MAX)
+    {
+        puts("error: ms must be 1..185");
+        return;
+    }
+    start_block((uint32_t)count, print_mic_level);
+}
+
 const api_command_t api_commands[] = {
+    { "mic_bias", "measure microphone bias", command_mic_bias },
+    { "mic_level", "measure microphone level", command_mic_level },
     { "wdt_enable", "enable watchdog", command_wdt_enable },
     { "hang", "stop superloop", command_hang },
     { "reset_reason", "show reset reason", command_reset_reason },
