@@ -45,3 +45,6 @@ void platform_stream_release(void);
 uint32_t platform_stream_overruns(void);
 void platform_write(const void *data, uint32_t bytes);
 bool platform_tone_set(uint32_t freq_hz);
+bool platform_watchdog_enable(uint32_t timeout_ms);
+void platform_watchdog_feed(void);
+bool platform_watchdog_caused_reset(uint32_t *restarts);

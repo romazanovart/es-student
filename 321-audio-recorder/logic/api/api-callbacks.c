@@ -437,7 +437,43 @@ static void command_generate_tone(const command_t *command)
         printf("tone: %u Hz\n", (unsigned)freq);
 }
 
+static void command_wdt_enable(const command_t *command)
+{
+    uint32_t timeout_ms;
+    if (command->argc != 1 || !parse_u32(command->argv[0], &timeout_ms))
+    {
+        puts("error: usage wdt_enable <timeout_ms>");
+        return;
+    }
+    if (!platform_watchdog_enable(timeout_ms))
+    {
+        puts("error: timeout_ms must be 1..8388");
+        return;
+    }
+    printf("wdt: enabled, timeout %u ms\n", (unsigned)timeout_ms);
+}
+
+static void command_hang(const command_t *command)
+{
+    (void)command;
+    puts("hang: superloop stopped");
+    while (1)
+    {
+    }
+}
+
+static void command_reset_reason(const command_t *command)
+{
+    (void)command;
+    uint32_t restarts;
+    bool reset = platform_watchdog_caused_reset(&restarts);
+    printf("reset: %s, restarts %u\n", reset ? "watchdog" : "other", (unsigned)restarts);
+}
+
 const api_command_t api_commands[] = {
+    { "wdt_enable", "enable watchdog", command_wdt_enable },
+    { "hang", "stop superloop", command_hang },
+    { "reset_reason", "show reset reason", command_reset_reason },
     { "generate_tone", "set PWM frequency", command_generate_tone },
     { "stream_start", "start ADC stream", command_stream_start },
     { "stream_stop", "stop ADC stream", command_stream_stop },
