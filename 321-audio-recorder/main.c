@@ -16,6 +16,7 @@ typedef enum {
     STOPWATCH_BUTTON,
     STOPWATCH_PI,
     STOPWATCH_TELEMETRY,
+    STOPWATCH_STREAM,
 } stopwatch_id_t;
 
 int main(void)
@@ -25,12 +26,14 @@ int main(void)
     button_task_init(led_task_next_state);
     stdio_text_protocol_init();
     telemetry_task_init(api_print_telemetry);
+    stream_task_init(api_send_frame);
     profiling_stopwatch_init(STOPWATCH_LOOP, "loop");
     profiling_stopwatch_init(STOPWATCH_COMMAND, "command");
     profiling_stopwatch_init(STOPWATCH_LED, "led");
     profiling_stopwatch_init(STOPWATCH_BUTTON, "button");
     profiling_stopwatch_init(STOPWATCH_PI, "pi");
     profiling_stopwatch_init(STOPWATCH_TELEMETRY, "telemetry");
+    profiling_stopwatch_init(STOPWATCH_STREAM, "stream");
     LOG_INF("%s %s\n", FIRMWARE_NAME, FIRMWARE_VERSION);
 
     while (1)
@@ -61,6 +64,9 @@ int main(void)
         telemetry_task_handle();
         profiling_stop(STOPWATCH_TELEMETRY);
         block_task_handle();
+        profiling_start(STOPWATCH_STREAM);
+        stream_task_handle();
+        profiling_stop(STOPWATCH_STREAM);
 
         profiling_stop(STOPWATCH_LOOP);
     }

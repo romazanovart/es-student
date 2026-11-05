@@ -36,3 +36,11 @@ bool platform_block_start(uint32_t count);
 bool platform_block_done(void);
 const uint16_t *platform_block_samples(void);
 uint32_t platform_block_time_us(void);
+
+#define PLATFORM_STREAM_BYTES 1024
+bool platform_stream_start(uint8_t bits);
+void platform_stream_stop(void);
+const uint8_t *platform_stream_next(uint32_t *samples);
+void platform_stream_release(void);
+uint32_t platform_stream_overruns(void);
+void platform_write(const void *data, uint32_t bytes);

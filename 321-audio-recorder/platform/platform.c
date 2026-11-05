@@ -75,6 +75,120 @@ uint32_t platform_block_time_us(void)
     return block_end_us - block_start_us;
 }
 
+static bool stream_running;
+
+static int stream_channels[2];
+static uint8_t stream_buffers[2][PLATFORM_STREAM_BYTES] __attribute__((aligned(4)));
+static volatile bool stream_ready[2];
+static volatile uint32_t stream_overruns;
+static uint32_t stream_samples;
+static uint32_t stream_next;
+
+static void on_stream_buffer(void)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        if (dma_channel_get_irq0_status(stream_channels[i]))
+        {
+            dma_channel_acknowledge_irq0(stream_channels[i]);
+
+            dma_channel_set_write_addr(stream_channels[i], stream_buffers[i], false);
+
+            if (stream_ready[(i + 1) % 2])
+            {
+                stream_overruns++;
+            }
+            stream_ready[i] = true;
+        }
+    }
+}
+
+bool platform_stream_start(uint8_t bits)
+{
+    if (platform_adc_busy() || bits != 16)
+    {
+        return false;
+    }
+
+    stream_samples = PLATFORM_STREAM_BYTES / 2;
+    adc_select_input(ADC_CHANNEL);
+    adc_fifo_setup(true, true, 1, false, false);
+    adc_set_clkdiv(48000000.0f / PLATFORM_SAMPLE_RATE_HZ - 1.0f);
+
+    for (int i = 0; i < 2; i++)
+    {
+        int next_channel = stream_channels[(i + 1) % 2];
+
+        dma_channel_config cfg = dma_channel_get_default_config(stream_channels[i]);
+        channel_config_set_transfer_data_size(&cfg, DMA_SIZE_16);
+        channel_config_set_read_increment(&cfg, false);
+        channel_config_set_write_increment(&cfg, true);
+        channel_config_set_dreq(&cfg, DREQ_ADC);
+        channel_config_set_chain_to(&cfg, next_channel);
+        dma_channel_configure(stream_channels[i], &cfg, stream_buffers[i], &adc_hw->fifo,
+                              stream_samples, false);
+        dma_channel_set_irq0_enabled(stream_channels[i], true);
+        stream_ready[i] = false;
+    }
+
+    stream_overruns = 0;
+    stream_next = 0;
+    stream_running = true;
+    dma_channel_start(stream_channels[0]);
+    adc_run(true);
+    return true;
+}
+
+void platform_stream_stop(void)
+{
+    if (!stream_running)
+    {
+        return;
+    }
+
+    adc_run(false);
+
+    for (int i = 0; i < 2; i++)
+    {
+        dma_channel_config cfg = dma_get_channel_config(stream_channels[i]);
+        channel_config_set_chain_to(&cfg, stream_channels[i]);
+        dma_channel_set_config(stream_channels[i], &cfg, false);
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+        dma_channel_set_irq0_enabled(stream_channels[i], false);
+        dma_channel_abort(stream_channels[i]);
+        dma_channel_acknowledge_irq0(stream_channels[i]);
+    }
+    adc_one_shot();
+    stream_running = false;
+}
+
+void platform_write(const void *data, uint32_t bytes)
+{
+    stdio_put_string((const char *)data, (int)bytes, false, false);
+}
+
+const uint8_t *platform_stream_next(uint32_t *samples)
+{
+    if (!stream_running || !stream_ready[stream_next])
+        return NULL;
+    *samples = stream_samples;
+    return stream_buffers[stream_next];
+}
+
+void platform_stream_release(void)
+{
+    stream_ready[stream_next] = false;
+    stream_next ^= 1;
+}
+
+uint32_t platform_stream_overruns(void)
+{
+    return stream_overruns;
+}
+
 void platform_init(void)
 {
     stdio_init_all();
@@ -93,6 +207,10 @@ void platform_init(void)
     dma_channel_set_irq1_enabled(block_channel, true);
     irq_set_exclusive_handler(DMA_IRQ_1, on_block_done);
     irq_set_enabled(DMA_IRQ_1, true);
+    stream_channels[0] = dma_claim_unused_channel(true);
+    stream_channels[1] = dma_claim_unused_channel(true);
+    irq_set_exclusive_handler(DMA_IRQ_0, on_stream_buffer);
+    irq_set_enabled(DMA_IRQ_0, true);
 }
 
 float platform_temp_read(void)
@@ -184,7 +302,7 @@ static bool on_capture(repeating_timer_t *timer)
 
 bool platform_adc_busy(void)
 {
-    return capture_running || block_running;
+    return capture_running || block_running || stream_running;
 }
 
 bool platform_capture_start(uint32_t count, uint32_t period_us)
