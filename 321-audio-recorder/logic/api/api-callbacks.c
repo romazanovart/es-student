@@ -421,7 +421,24 @@ static void command_stream_stop(const command_t *command)
            (unsigned)stream_task_get_overruns());
 }
 
+static void command_generate_tone(const command_t *command)
+{
+    uint32_t freq;
+    if (command->argc != 1 || !parse_u32(command->argv[0], &freq))
+    {
+        puts("error: usage generate_tone <Hz>");
+        return;
+    }
+    if (!platform_tone_set(freq))
+        puts("error: Hz must be 0 or 20..20000");
+    else if (freq == 0)
+        puts("tone: off");
+    else
+        printf("tone: %u Hz\n", (unsigned)freq);
+}
+
 const api_command_t api_commands[] = {
+    { "generate_tone", "set PWM frequency", command_generate_tone },
     { "stream_start", "start ADC stream", command_stream_start },
     { "stream_stop", "stop ADC stream", command_stream_stop },
     { "dma_cap", "capture DMA block: dma_cap <N>", command_dma_cap },

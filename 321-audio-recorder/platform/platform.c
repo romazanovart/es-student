@@ -4,11 +4,15 @@
 #include "hardware/adc.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
 #include "pico/stdlib.h"
 
 #define LED_PIN 25
 #define BUTTON_PIN 15
 #define ADC_PIN 26
+#define TONE_PIN 20
+#define TONE_COUNT_HZ 1000000
 #define CHARGE_PIN 22
 #define ADC_CHANNEL 0
 #define ADC_TEMP_CHANNEL 4
@@ -189,6 +193,21 @@ uint32_t platform_stream_overruns(void)
     return stream_overruns;
 }
 
+bool platform_tone_set(uint32_t freq_hz)
+{
+    if (freq_hz == 0)
+    {
+        pwm_set_gpio_level(TONE_PIN, 0);
+        return true;
+    }
+    if (freq_hz < 20 || freq_hz > 20000)
+        return false;
+    uint32_t period = TONE_COUNT_HZ / freq_hz;
+    pwm_set_wrap(pwm_gpio_to_slice_num(TONE_PIN), period - 1);
+    pwm_set_gpio_level(TONE_PIN, period / 2);
+    return true;
+}
+
 void platform_init(void)
 {
     stdio_init_all();
@@ -211,6 +230,13 @@ void platform_init(void)
     stream_channels[1] = dma_claim_unused_channel(true);
     irq_set_exclusive_handler(DMA_IRQ_0, on_stream_buffer);
     irq_set_enabled(DMA_IRQ_0, true);
+    gpio_set_function(TONE_PIN, GPIO_FUNC_PWM);
+    uint slice = pwm_gpio_to_slice_num(TONE_PIN);
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, (float)clock_get_hz(clk_sys) / TONE_COUNT_HZ);
+    pwm_init(slice, &config, false);
+    pwm_set_gpio_level(TONE_PIN, 0);
+    pwm_set_enabled(slice, true);
 }
 
 float platform_temp_read(void)

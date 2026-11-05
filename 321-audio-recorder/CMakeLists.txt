@@ -21,7 +21,7 @@ target_include_directories(platform PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(platform PRIVATE pico_stdlib hardware_adc hardware_dma)
+target_link_libraries(platform PRIVATE pico_stdlib hardware_adc hardware_dma hardware_pwm)
 
 add_library(logic STATIC
     logic/api/api.c
