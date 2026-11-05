@@ -21,7 +21,7 @@ target_include_directories(platform PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(platform PRIVATE pico_stdlib hardware_adc)
+target_link_libraries(platform PRIVATE pico_stdlib hardware_adc hardware_dma)
 
 add_library(logic STATIC
     logic/api/api.c
@@ -29,6 +29,7 @@ add_library(logic STATIC
     logic/led-task/led-task.c
     logic/button-task/button-task.c
     logic/pi-task/pi-task.c
+    logic/block-task/block-task.c
     logic/telemetry-task/telemetry-task.c
 )
 

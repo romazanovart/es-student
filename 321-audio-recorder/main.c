@@ -1,4 +1,5 @@
 #include "api/api.h"
+#include "block-task/block-task.h"
 #include "button-task/button-task.h"
 #include "firmware.h"
 #include "led-task/led-task.h"
@@ -59,6 +60,7 @@ int main(void)
         profiling_start(STOPWATCH_TELEMETRY);
         telemetry_task_handle();
         profiling_stop(STOPWATCH_TELEMETRY);
+        block_task_handle();
 
         profiling_stop(STOPWATCH_LOOP);
     }
