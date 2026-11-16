@@ -1,64 +1,48 @@
 #include "pi-task/pi-task.h"
-
 #include "systime/systime.h"
 
-/* One term takes about 4.7 us, so 100 terms fit into 0.5 ms. */
-#define PI_TERMS_PER_CALL 100
-
-static pi_task_state_t pi_state;
-static uint32_t pi_terms;
+static const uint32_t PI_TERMS_PER_CALL = 64;
+static pi_state_t state;
+static uint32_t total_terms;
 static uint32_t pi_k;
-static double pi_sum;
-static double pi_value;
-static uint64_t pi_started_us;
-static uint64_t pi_elapsed_ms;
+static double sum;
+static double sign;
+static double value;
+static uint64_t start_us;
+static uint64_t elapsed_ms;
 
+void pi_task_init(void)
+{
+    state = PI_NOT_STARTED;
+}
 bool pi_task_start(uint32_t terms)
 {
-    if (pi_state == PI_TASK_RUNNING)
-    {
-        return false;
-    }
-
-    pi_terms = terms;
+    if (state == PI_RUNNING || terms == 0) return false;
+    total_terms = terms;
     pi_k = 0;
-    pi_sum = 0.0;
-    pi_started_us = systime_us();
-    pi_state = PI_TASK_RUNNING;
+    sum = 0.0;
+    sign = 1.0;
+    elapsed_ms = 0;
+    start_us = systime_us();
+    state = PI_RUNNING;
     return true;
 }
-
 void pi_task_handle(void)
 {
-    if (pi_state != PI_TASK_RUNNING)
-    {
-        return;
+    if (state != PI_RUNNING) return;
+    uint32_t remaining = total_terms - pi_k;
+    uint32_t batch = remaining < PI_TERMS_PER_CALL ? remaining : PI_TERMS_PER_CALL;
+    for (uint32_t n = 0; n < batch; ++n, ++pi_k) {
+        sum += sign / (2.0 * pi_k + 1.0);
+        sign = -sign;
     }
-
-    uint32_t end = pi_k + PI_TERMS_PER_CALL;
-    if (end < pi_k || end > pi_terms)
-    {
-        end = pi_terms;
-    }
-
-    for (; pi_k < end; pi_k++)
-    {
-        double term = 1.0 / (2.0 * pi_k + 1.0);
-        pi_sum += (pi_k & 1u) ? -term : term;
-    }
-
-    if (pi_k == pi_terms)
-    {
-        pi_value = pi_sum * 4.0;
-        pi_elapsed_ms = (systime_us() - pi_started_us) / 1000;
-        pi_state = PI_TASK_READY;
+    if (pi_k == total_terms) {
+        value = 4.0 * sum;
+        elapsed_ms = (systime_us() - start_us) / 1000;
+        state = PI_READY;
     }
 }
-
-void pi_task_get_result(pi_task_result_t *result)
+void pi_task_get_result(pi_result_t *result)
 {
-    result->state = pi_state;
-    result->value = pi_value;
-    result->time_ms = pi_elapsed_ms;
-    result->terms = pi_terms;
+    *result = (pi_result_t){.state = state, .value = value, .elapsed_ms = elapsed_ms};
 }

@@ -1,25 +1,22 @@
 #include "block-task/block-task.h"
-
 #include <stddef.h>
 #include "platform/platform.h"
-
+static bool active;
+static uint32_t count;
 static block_task_callback_t callback;
-static uint32_t sample_count;
-
-bool block_task_start(uint32_t count, block_task_callback_t on_block)
+bool block_task_start(uint32_t n, block_task_callback_t on_block)
 {
-    if (callback != NULL || on_block == NULL || !platform_block_start(count))
-        return false;
-    sample_count = count;
+    if (active || on_block == NULL || !platform_block_start(n)) return false;
+    count = n;
     callback = on_block;
+    active = true;
     return true;
 }
-
 void block_task_handle(void)
 {
-    if (callback == NULL || !platform_block_done())
-        return;
-    block_task_callback_t on_block = callback;
+    if (!active || !platform_block_done()) return;
+    block_task_callback_t done = callback;
+    active = false;
     callback = NULL;
-    on_block(platform_block_samples(), sample_count, platform_block_time_us());
+    done(platform_block_samples(), count, platform_block_time_us());
 }
